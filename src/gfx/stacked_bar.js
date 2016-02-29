@@ -91,7 +91,7 @@ uv.StackedBarGraph.prototype.drawVerticalBars = function (idx, csum, tsum) {
     bargroup = this.bargroups[self.categories[idx]];
 
   var bars = bargroup.selectAll('g').data(this.graphdef.dataset[self.categories[idx]])
-        .enter().append('g').classed('cge-' + uv.util.formatClassName(self.categories[idx]), true);
+    .enter().append('g').classed('cge-' + uv.util.formatClassName(self.categories[idx]), true);
 
   bars.append('rect')
     .attr('height', 0)
@@ -102,18 +102,18 @@ uv.StackedBarGraph.prototype.drawVerticalBars = function (idx, csum, tsum) {
     .style('stroke', 'none')
     .style('fill', color)
     .transition()
-      .duration(self.config.effects.duration)
-      .delay(idx * self.config.effects.duration)
-      .attr('height', function (d,i) { return -(axes.ver.scale(-csum[i]) - axes.ver.scale(-csum[i]-d.value)); })
-      .each("end", function (d,i){
-        d3.select(this).on('mouseover', uv.effects.bar.mouseover(self, idx, self.config.effects.textcolor));
-        d3.select(this).on('mouseout', uv.effects.bar.mouseout(self, idx, self.config.effects.textcolor));
-        if(typeof self.config.graph.clickCallback === "function") {
-          d3.select(this).on('click', function(_d){
-            self.config.graph.clickCallback.apply(null, [_d]);
-          });
-        }
-      });
+    .duration(self.config.effects.duration)
+    .delay(idx * self.config.effects.duration)
+    .attr('height', function (d,i) { return -(axes.ver.scale(-csum[i]) - axes.ver.scale(-csum[i]-d.value)); })
+    .each("end", function (d,i){
+      d3.select(this).on('mouseover', uv.effects.bar.mouseover(self, idx, self.config.effects.textcolor));
+      d3.select(this).on('mouseout', uv.effects.bar.mouseout(self, idx, self.config.effects.textcolor));
+      if(typeof self.config.graph.clickCallback === "function") {
+        d3.select(this).on('click', function(_d){
+          self.config.graph.clickCallback.apply(null, [_d]);
+        });
+      }
+    });
 
 
   bars.append('text').attr('transform','scale(1,-1)')
@@ -129,10 +129,54 @@ uv.StackedBarGraph.prototype.drawVerticalBars = function (idx, csum, tsum) {
     .style('opacity', 0)
     .text(function(d) { return ( height - axes.ver.scale(d.value) > 15) ? uv.util.getLabelValue(self, d) : null; })
     .transition()
+    .duration(self.config.effects.duration)
+    .delay(idx * self.config.effects.duration)
+    .style('opacity', 1)
+    .attr('y', function (d, i) { tsum[i] += d.value; return -(2*height - axes.ver.scale(tsum[i])) + 5; });
+
+  var categoriesLength = self.categories.length -1;
+  var counter = 0;
+  // Append total to the end of the stacked bar
+  if(self.config.bar.showtotalabovestackedchart === true && idx === categoriesLength){
+
+    bars.append('text').attr('transform', 'scale(1,-1)')
+      .attr('x', function (d) {
+        return axes.hor.scale(d.name) + axes.hor.scale.rangeBand() / 2;
+      })
+      .attr('y', -height )
+
+      .attr('text-anchor', 'middle')
+      .attr('text-anchor', 'middle')
+      .classed('cr-' + uv.util.formatClassName(self.categories[idx]), true)
+
+      .style('font-family', config.bar.fontfamily)
+      .style('font-size', config.bar.fontsize)
+      .style('font-weight', config.bar.fontweight)
+      .style('opacity', 0)
+
+      .text(function(d){
+        var value = 0;
+        for(var i =0; i < self.graphdef.categories.length; i++){
+          value = value + self.graphdef.dataset[self.graphdef.categories[i]][counter].value;
+
+        }
+        counter++;
+        // Format the value if it is defined
+        if (self.config.label.formatter !== undefined) {
+          return self.config.label.formatter(value);
+        }
+
+        var val = (value % 1 === 0) ? value : value.toFixed(self.config.label.precision);
+        return self.config.label.prefix + String(val) + self.config.label.suffix;
+      })
+      .transition()
       .duration(self.config.effects.duration)
       .delay(idx * self.config.effects.duration)
       .style('opacity', 1)
-      .attr('y', function (d, i) { tsum[i] += d.value; return -(2*height - axes.ver.scale(tsum[i])) + 5; });
+      .attr('y', function (d, i) {
+        return -(axes.ver.scale(csum[i]) + 4);
+      });
+  }
 
   bars.append('svg:title')
     .text( function (d, i) { return uv.util.getTooltipText(self, self.categories[idx], self.labels[i], d);});

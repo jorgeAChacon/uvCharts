@@ -84,7 +84,8 @@ uv.config = {
     fontfamily: 'Arial',
     fontsize: '10',
     fontweight: 'bold',
-    textcolor: '#000'
+    textcolor: '#000',
+    showtotalabovestackedchart: false
   },
 
   line: {
